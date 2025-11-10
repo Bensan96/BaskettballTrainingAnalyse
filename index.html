@@ -108,6 +108,18 @@
 
         .player-card-num { font-size: 1.5rem; font-weight: 800; color: var(--primary); width: 3rem; text-align: center; }
         .player-card-name { font-size: 1.125rem; font-weight: 500; color: var(--gray-800); margin-left: 1rem; }
+        
+        /* NEUE KLASSEN FÜR AKTIONEN (ersetzen Inline-Styles) */
+        .btn-stat-new {
+            font-size: 0.875rem; background-color: #dbeafe; color: var(--secondary); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;
+        }
+        .btn-stat-new:hover { background-color: #bfdbfe; }
+
+        .btn-analysis {
+            font-size: 0.875rem; background-color: var(--gray-100); color: var(--gray-700); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;
+        }
+        .btn-analysis:hover { background-color: var(--gray-200); }
+
 
         /* Detail/Analysis Styles */
         .analysis-box { background-color: var(--gray-100); padding: 1rem; border-radius: 0.5rem; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); margin-bottom: 1.5rem; }
@@ -390,10 +402,10 @@
                         <span class="player-card-name">${player.name}</span>
                     </div>
                     <div class="player-actions-group">
-                        <button onclick="startGameEntry('${player.id}', '${player.name}')" style="font-size: 0.875rem; background-color: #dbeafe; color: var(--secondary); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#bfdbfe'" onmouseout="this.style.backgroundColor='#dbeafe'">
+                        <button onclick="startGameEntry('${player.id}', '${player.name}')" class="btn-stat-new">
                             + Neue Statistik
                         </button>
-                        <button onclick="showPlayerDetail('${player.id}')" style="font-size: 0.875rem; background-color: var(--gray-100); color: var(--gray-700); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--gray-200)'" onmouseout="this.style.backgroundColor='var(--gray-100)'">
+                        <button onclick="showPlayerDetail('${player.id}')" class="btn-analysis">
                             Analyse/Verlauf
                         </button>
                     </div>
@@ -451,11 +463,7 @@
                     inputHtml = `
                         <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem; margin-top: 0.5rem; ">
                     `;
-                    if (window.innerWidth < 640) {
-                        inputHtml = `
-                            <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem; margin-top: 0.5rem; ">
-                        `;
-                    }
+                    // Unnötige mobile Anpassung in JS entfernt, da CSS das regelt
                 }
 
                 div.innerHTML = `
