@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basketball Statistik Tracker</title>
+    <!-- ALLE EXTERNE CDNs (Tailwind, Firebase, Chart.js) WURDEN ENTFERNT. -->
+    
+    <style>
+        /* Custom styles for better aesthetics, replacing Tailwind */
+        :root {
+            --primary: #FF7F50; /* Coral for basketball energy */
+            --secondary: #3B82F6; /* Blue for contrast */
+            --gray-900: #1f2937;
+            --gray-800: #374151;
+            --gray-700: #4b5563;
+            --gray-600: #6b7280;
+            --gray-500: #9ca3af;
+            --gray-400: #9ca3af;
+            --gray-300: #d1d5db;
+            --gray-200: #e5e7eb;
+            --gray-100: #f3f4f6;
+            --gray-50: #f9fafb;
+        }
+        
+        /* Global Styles */
+        body { font-family: 'Inter', sans-serif; background-color: var(--gray-50); min-height: 100vh; padding: 1rem; }
+
+        .text-primary { color: var(--primary); }
+        .bg-primary { background-color: var(--primary); }
+        .hover-primary:hover { background-color: #e6693a; }
+        .text-secondary { color: var(--secondary); }
+
+        /* App Container */
+        .app-container {
+            width: 100%;
+            max-width: 896px; /* max-w-4xl */
+            margin: 0 auto; /* mx-auto */
+            background-color: white; /* bg-white */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; 
+        }
+        @media (min-width: 640px) {
+            .app-container {
+                padding: 2rem; /* sm:p-8 */
+            }
+        }
+
+        /* Typography and Headings */
+        .heading-main { font-size: 1.875rem; font-weight: 800; color: var(--gray-900); margin-bottom: 1.5rem; border-bottom: 4px solid var(--primary); padding-bottom: 0.5rem; }
+        .heading-sub { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--gray-800); }
+        .text-sm-gray { font-size: 0.875rem; color: var(--gray-600); margin-bottom: 1.5rem; }
+        .text-base-gray { font-size: 1rem; color: var(--gray-700); }
+
+
+        /* Spinner */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .loading-spinner {
+            display: flex; justify-content: center; align-items: center; height: 12rem;
+        }
+        .spinner-circle {
+            height: 3rem; width: 3rem; border-radius: 50%; border-bottom: 2px solid var(--primary); animation: spin 1s linear infinite;
+        }
+
+        /* Screen Transitions */
+        .screen {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            margin-top: 1.5rem; /* Equivalent to space-y-6 container separation */
+        }
+
+        /* Input/Button styles */
+        .input-field-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        @media (min-width: 640px) { .input-field-group { flex-direction: row; } }
+
+        .input-text {
+            flex-grow: 1; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 0.5rem; outline: none;
+        }
+        .input-number-small {
+            width: 6rem; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 0.5rem; outline: none; text-align: center;
+        }
+        .input-text:focus, .input-number-small:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary); color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; transition: background-color 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); white-space: nowrap;
+        }
+        .btn-secondary {
+            background-color: var(--secondary); color: white; padding: 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-back { display: flex; align-items: center; color: var(--primary); margin-bottom: 1rem; text-decoration: none; transition: text-decoration 0.15s; }
+        .btn-back:hover { text-decoration: underline; }
+
+        /* Player Card / Game Entry Styles */
+        .player-card {
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 1rem; background-color: white; border: 1px solid var(--gray-200); border-radius: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: box-shadow 0.15s;
+        }
+        @media (min-width: 640px) { .player-card { flex-direction: row; } }
+        
+        .player-info-group { display: flex; align-items: center; margin-bottom: 0.75rem; }
+        @media (min-width: 640px) { .player-info-group { margin-bottom: 0; } }
+        
+        .player-actions-group { display: flex; gap: 0.5rem; }
+
+        .player-card-num { font-size: 1.5rem; font-weight: 800; color: var(--primary); width: 3rem; text-align: center; }
+        .player-card-name { font-size: 1.125rem; font-weight: 500; color: var(--gray-800); margin-left: 1rem; }
+
+        /* Detail/Analysis Styles */
+        .analysis-box { background-color: var(--gray-100); padding: 1rem; border-radius: 0.5rem; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); margin-bottom: 1.5rem; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        @media (min-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .avg-item {
+            padding: 0.75rem; background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border: 1px solid var(--gray-200);
+        }
+        .avg-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .avg-label { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem; }
+
+        /* Stat Entry Form */
+        .stat-entry-row { display: flex; flex-direction: column; justify-content: space-between; padding: 0.75rem; background-color: var(--gray-50); border-radius: 0.5rem; border: 1px solid var(--gray-200); }
+        @media (min-width: 640px) { .stat-entry-row { flex-direction: row; align-items: center; } }
+
+        .stat-input-group { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        @media (min-width: 640px) { .stat-input-group { margin-top: 0; } }
+        
+        .date-input { padding: 0.25rem; border: 1px solid var(--gray-300); border-radius: 0.25rem; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Haupt-Container für die App -->
+    <div id="app" class="app-container">
+        <h1 class="heading-main">Basketball-Trainingsanalyse (Lokal)</h1>
+        <p class="text-sm" style="color: red; margin-bottom: 1.5rem;" id="user-info">Daten werden lokal im Browser gespeichert.</p>
+
+        <!-- Ladeanzeige (wird nur kurz angezeigt) -->
+        <div id="loading-spinner" class="loading-spinner">
+            <div class="spinner-circle"></div>
+        </div>
+
+        <!-- Bildschirme -->
+        <div id="screens" class="hidden" style="margin-top: 1.5rem;">
+
+            <!-- 1. Spielerlisten-Bildschirm -->
+            <div id="playerListScreen" class="screen">
+                <h2 class="heading-sub">Spielerverwaltung</h2>
+
+                <!-- Spieler hinzufügen -->
+                <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px dashed var(--gray-300); border-radius: 0.5rem; background-color: var(--gray-50);">
+                    <h3 style="font-weight: 500; margin-bottom: 0.5rem; color: var(--gray-700);">Neuen Spieler hinzufügen</h3>
+                    <div class="input-field-group">
+                        <input type="text" id="newPlayerName" placeholder="Name des Spielers" class="input-text">
+                        <input type="number" id="newPlayerNumber" placeholder="Trikotnummer" class="input-number-small" style="width: 6rem; padding-left: 0.75rem; padding-right: 0.75rem;">
+                        <button onclick="addPlayer()" class="btn-primary bg-primary hover-primary">Hinzufügen</button>
+                    </div>
+                </div>
+
+                <!-- Liste der Spieler -->
+                <h3 style="font-size: 1.25rem; font-weight: 500; margin-bottom: 0.75rem; color: var(--gray-800);">Teamkader (<span id="playerCount">0</span> Spieler)</h3>
+                <div id="playerList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <!-- Spieler-Karten werden hier dynamisch eingefügt -->
+                </div>
+            </div>
+
+            <!-- 2. Statistik-Eingabebildschirm -->
+            <div id="statEntryScreen" class="screen hidden">
+                <button onclick="showScreen('playerListScreen')" class="btn-back">
+                    <svg style="width: 1.25rem; height: 1.25rem; margin-right: 0.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Zurück zur Spielerliste
+                </button>
+                <h2 class="heading-sub">Statistikeingabe für: <span id="entryPlayerName" class="text-primary"></span></h2>
+                <p class="text-sm-gray" style="margin-bottom: 1.5rem; color: var(--gray-500);">Spiel-Datum: <input type="date" id="gameDate" class="date-input"></p>
+
+                <!-- Statistische Felder (Feldwürfe, 3er, Freiwürfe, etc.) -->
+                <div id="statsForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Formularfelder werden hier dynamisch mit data-stat-id eingefügt -->
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; background-color: #fffbeb; border: 1px solid #fef3c7;">
+                    <p style="color: #b45309; font-weight: 600;">Voice-Memo (Wunsch-Feature)</p>
+                    <p style="font-size: 0.875rem; color: #a16207;">Hier könnte zukünftig ein Button zur Spracheingabe sein (z.B. "Max hat 2 Dreier gemacht, 1 Rebound"). Derzeit manuelle Eingabe erforderlich.</p>
+                </div>
+
+                <button onclick="saveGameStats()" id="saveStatsBtn" class="btn-secondary" style="width: 100%; margin-top: 1.5rem;">
+                    Statistiken speichern
+                </button>
+            </div>
+
+            <!-- 3. Spieler-Detail-Bildschirm (Analyse) -->
+            <div id="playerDetailScreen" class="screen hidden">
+                <button onclick="showScreen('playerListScreen')" class="btn-back">
+                    <svg style="width: 1.25rem; height: 1.25rem; margin-right: 0.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Zurück zur Übersicht
+                </button>
+                <h2 style="font-size: 1.875rem; font-weight: 800; margin-bottom: 1rem; color: var(--gray-900);"><span id="detailPlayerName"></span> <span id="detailPlayerNum" style="color: var(--gray-400);"></span></h2>
+                <p class="text-sm-gray" style="color: var(--gray-500); margin-bottom: 1.5rem;">Lokale ID: <span id="playerIdDisplay"></span></p>
+
+                <!-- Karriere-Übersicht -->
+                <div class="analysis-box">
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Karriere-Durchschnitt (Pro Spiel)</h3>
+                    <div id="careerAverages" class="stats-grid">
+                        <!-- Durchschnittswerte werden hier eingefügt -->
+                    </div>
+                </div>
+
+                <!-- Verlaufs-Zusammenfassung (ERSETZT DAS DIAGRAMM) -->
+                <div id="progressionSummary" style="margin-bottom: 2rem;">
+                    <!-- Trend-Analyse wird hier eingefügt -->
+                </div>
+
+                <!-- Detailierte Spielhistorie -->
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Detailierte Spielhistorie (<span id="historyCount">0</span> Spiele)</h3>
+                <div id="gameHistory" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Spielstatistiken werden hier eingefügt -->
+                    <p id="noHistory" style="color: var(--gray-500); font-style: italic; padding: 1rem; background-color: var(--gray-100); border-radius: 0.5rem; display: none;">Noch keine Spieleinträge vorhanden.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modale Nachricht für Erfolge/Fehler (ersetzt alert()) -->
+    <div id="messageModal" style="position: fixed; inset: 0; background-color: rgba(31, 41, 55, 0.75); display: none; z-index: 50; align-items: center; justify-content: center; padding: 1rem;">
+        <div style="background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 1.5rem; width: 100%; max-width: 24rem; transform: scale(1); transition: all 0.3s;">
+            <h3 id="modalTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-900);">Nachricht</h3>
+            <p id="modalMessage" style="color: var(--gray-700); margin-bottom: 1rem;"></p>
+            <button onclick="closeModal()" class="btn-primary" style="width: 100%;">Schließen</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Globale Speicherstruktur ---
+        let players = [];
+        let allGameStats = [];
+        let currentGameStats = {}; 
+
+        const PLAYER_STORAGE_KEY = 'bb_tracker_players';
+        const STATS_STORAGE_KEY = 'bb_tracker_stats';
+
+
+        // --- HILFSFUNKTIONEN (UTILITIES) ---
+
+        /** Zeigt ein modales Fenster an (ersetzt alert()) */
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('messageModal').style.display = 'flex';
+        }
+
+        /** Schließt das modale Fenster */
+        window.closeModal = function() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        /** Navigiert zwischen den Bildschirmen */
+        window.showScreen = function(screenName) {
+            const screens = ['playerListScreen', 'statEntryScreen', 'playerDetailScreen'];
+            screens.forEach(id => {
+                const screen = document.getElementById(id);
+                if (screen) {
+                    if (id === screenName) {
+                        screen.classList.remove('hidden');
+                        screen.style.opacity = '1';
+                        screen.style.transform = 'translateY(0)';
+                    } else {
+                        // Verstecke andere Bildschirme
+                        screen.style.opacity = '0';
+                        screen.style.transform = 'translateY(10px)';
+                        setTimeout(() => screen.classList.add('hidden'), 300);
+                    }
+                }
+            });
+        }
+
+        /** Formatiert eine Zahl als String mit zwei Dezimalstellen */
+        function formatAvg(num) {
+            return (num || 0).toFixed(2);
+        }
+
+        // --- LOCAL STORAGE FUNKTIONEN ---
+        
+        /** Lädt alle Daten beim Start aus dem localStorage */
+        function loadAllData() {
+            try {
+                const playerString = localStorage.getItem(PLAYER_STORAGE_KEY);
+                players = playerString ? JSON.parse(playerString) : [];
+
+                const statsString = localStorage.getItem(STATS_STORAGE_KEY);
+                allGameStats = statsString ? JSON.parse(statsString) : [];
+
+            } catch (error) {
+                console.error("Fehler beim Laden des lokalen Speichers:", error);
+                players = [];
+                allGameStats = [];
+            }
+            renderPlayerList();
+        }
+
+        /** Speichert die Spielerliste im localStorage */
+        function savePlayers() {
+            try {
+                localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(players));
+            } catch (error) {
+                console.error("Fehler beim Speichern der Spieler:", error);
+                showModal("Speicherfehler", "Spieler konnten nicht gespeichert werden. Speicher ist möglicherweise voll.");
+            }
+        }
+
+        /** Speichert die gesamte Statistikliste im localStorage */
+        function saveGameStatsToLocal() {
+            try {
+                localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(allGameStats));
+            } catch (error) {
+                console.error("Fehler beim Speichern der Statistiken:", error);
+                showModal("Speicherfehler", "Statistiken konnten nicht gespeichert werden. Speicher ist möglicherweise voll.");
+            }
+        }
+
+        // --- ANWENDUNGS-SETUP ---
+
+        function setupApp() {
+            // Zeigt die Bildschirme an und versteckt den Spinner
+            document.getElementById('screens').classList.remove('hidden');
+            document.getElementById('loading-spinner').style.display = 'none';
+            
+            loadAllData();
+            showScreen('playerListScreen');
+        }
+
+        // --- SPIELERVERWALTUNG ---
+
+        /** Fügt einen neuen Spieler hinzu */
+        window.addPlayer = function() {
+            const nameInput = document.getElementById('newPlayerName');
+            const numberInput = document.getElementById('newPlayerNumber');
+
+            const name = nameInput.value.trim();
+            const number = parseInt(numberInput.value) || 0;
+
+            if (name.length < 2) {
+                return showModal("Eingabefehler", "Bitte einen gültigen Namen eingeben.");
+            }
+
+            const newPlayer = {
+                id: Date.now().toString(), // Generiert eine einfache, eindeutige ID
+                name: name,
+                number: number
+            };
+
+            players.push(newPlayer);
+            savePlayers();
+
+            nameInput.value = '';
+            numberInput.value = '';
+            showModal("Erfolg", `Spieler ${name} hinzugefügt.`);
+            renderPlayerList(); // Aktualisiert die Liste
+        }
+
+        /** Rendert die Spielerliste in der UI */
+        window.renderPlayerList = function() {
+            const listContainer = document.getElementById('playerList');
+            document.getElementById('playerCount').textContent = players.length;
+            listContainer.innerHTML = '';
+
+            if (players.length === 0) {
+                listContainer.innerHTML = '<p style="color: var(--gray-500); font-style: italic; padding: 1rem; background-color: var(--gray-100); border-radius: 0.5rem;">Noch keine Spieler hinzugefügt. Starten Sie oben mit der Eingabe!</p>';
+                return;
+            }
+
+            players.sort((a, b) => a.number - b.number).forEach(player => {
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card'; // Verwende interne CSS-Klasse
+                playerCard.innerHTML = `
+                    <div class="player-info-group">
+                        <span class="player-card-num">${player.number || '-'}</span>
+                        <span class="player-card-name">${player.name}</span>
+                    </div>
+                    <div class="player-actions-group">
+                        <button onclick="startGameEntry('${player.id}', '${player.name}')" style="font-size: 0.875rem; background-color: #dbeafe; color: var(--secondary); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#bfdbfe'" onmouseout="this.style.backgroundColor='#dbeafe'">
+                            + Neue Statistik
+                        </button>
+                        <button onclick="showPlayerDetail('${player.id}')" style="font-size: 0.875rem; background-color: var(--gray-100); color: var(--gray-700); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--gray-200)'" onmouseout="this.style.backgroundColor='var(--gray-100)'">
+                            Analyse/Verlauf
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(playerCard);
+            });
+        }
+
+        // --- STATISTIK EINGABE ---
+
+        /** Bereitet den Statistik-Eingabebildschirm vor */
+        window.startGameEntry = function(playerId, playerName) {
+            currentGameStats = { playerId, playerName };
+            document.getElementById('entryPlayerName').textContent = playerName;
+            
+            // Setze das heutige Datum als Standard
+            const today = new Date().toISOString().substring(0, 10);
+            document.getElementById('gameDate').value = today;
+
+            renderStatsForm();
+            showScreen('statEntryScreen');
+        }
+
+        /** Rendert das Formular für die Statistik-Eingabe */
+        function renderStatsForm() {
+            const stats = [
+                { label: 'Feldwürfe (Getroffen/Versucht)', id: 'FGM', idA: 'FGA' },
+                { label: 'Dreier (Getroffen/Versucht)', id: '3PM', idA: '3PA' },
+                { label: 'Freiwürfe (Getroffen/Versucht)', id: 'FTM', idA: 'FTA' },
+                { label: 'Rebounds (REB)', id: 'REB' },
+                { label: 'Assists (AST)', id: 'AST' },
+                { label: 'Steals (STL)', id: 'STL' },
+                { label: 'Blocks (BLK)', id: 'BLK' },
+                { label: 'Turnovers (TO)', id: 'TO' },
+                { label: 'Fouls (PF)', id: 'PF' },
+            ];
+
+            const formContainer = document.getElementById('statsForm');
+            formContainer.innerHTML = '';
+
+            stats.forEach(stat => {
+                const div = document.createElement('div');
+                div.className = 'stat-entry-row';
+                
+                let inputHtml = '';
+                if (stat.idA) {
+                    inputHtml = `
+                        <div class="stat-input-group">
+                            <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem;">
+                            <span style="color: var(--gray-500); align-self: center;">/</span>
+                            <input type="number" data-stat-id="${stat.idA}" value="0" min="0" class="input-number-small" style="width: 5rem;">
+                        </div>
+                    `;
+                } else {
+                    inputHtml = `
+                        <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem; margin-top: 0.5rem; ">
+                    `;
+                    if (window.innerWidth < 640) {
+                        inputHtml = `
+                            <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem; margin-top: 0.5rem; ">
+                        `;
+                    }
+                }
+
+                div.innerHTML = `
+                    <label style="font-weight: 500; color: var(--gray-700);">${stat.label}</label>
+                    ${inputHtml}
+                `;
+                formContainer.appendChild(div);
+            });
+        }
+
+        /** Speichert die eingegebenen Spielstatistiken im localStorage */
+        window.saveGameStats = function() {
+            const gameDate = document.getElementById('gameDate').value;
+            if (!gameDate) {
+                return showModal("Eingabefehler", "Bitte wählen Sie ein Spiel-Datum aus.");
+            }
+
+            const stats = {};
+            
+            document.querySelectorAll('#statsForm input[data-stat-id]').forEach(input => {
+                const id = input.getAttribute('data-stat-id');
+                const value = parseInt(input.value) || 0;
+                stats[id] = value;
+            });
+            
+            // Punkteberechnung
+            const twoPointersMade = stats.FGM - stats['3PM'];
+            const points = twoPointersMade * 2 + stats['3PM'] * 3 + stats.FTM * 1;
+            stats.PTS = points;
+
+            if (stats.FGM > stats.FGA || stats['3PM'] > stats['3PA'] || stats.FTM > stats.FTA) {
+                return showModal("Eingabefehler", "Die Anzahl der 'Getroffen' kann nicht größer sein als die Anzahl der 'Versucht'.");
+            }
+            if (stats['3PM'] > stats.FGM) {
+                return showModal("Eingabefehler", "Die Anzahl der 'Dreier Getroffen' kann nicht größer sein als die 'Feldwürfe Getroffen'.");
+            }
+
+            const newGameStat = {
+                id: Date.now().toString(),
+                playerId: currentGameStats.playerId,
+                playerName: currentGameStats.playerName,
+                date: gameDate,
+                stats: stats
+            };
+            
+            allGameStats.push(newGameStat);
+            saveGameStatsToLocal();
+
+            showModal("Erfolg", `Statistiken für ${currentGameStats.playerName} (${points} Punkte) erfolgreich gespeichert.`);
+            showScreen('playerListScreen'); // Zurück zur Spielerliste
+        }
+
+
+        // --- SPIELER ANALYSE & VERLAUF ---
+
+        /** Berechnet den Trend der Punkte pro Spiel */
+        function calculateTrend(data) {
+            if (data.length < 2) return "Kein Trend (weniger als 2 Spiele)";
+
+            // Vergleicht den Durchschnitt der letzten 3 Spiele mit dem Durchschnitt der ersten 3 Spiele
+            const N = data.length;
+            const windowSize = Math.min(N, 3);
+
+            if (windowSize < 2) return "Kurzfristig kein Trend (weniger als 2 Spiele)";
+
+            // Extrahieren der Punkte-Arrays
+            const recentPoints = data.slice(N - windowSize).map(g => g.stats.PTS);
+            const initialPoints = data.slice(0, windowSize).map(g => g.stats.PTS);
+            
+            // Hilfsfunktion für den Durchschnitt
+            const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+            
+            const recentAvg = avg(recentPoints);
+            const initialAvg = avg(initialPoints);
+
+            const difference = recentAvg - initialAvg;
+
+            if (difference > 1) {
+                return "Deutlicher Aufwärtstrend (+" + difference.toFixed(1) + " PTS)";
+            } else if (difference < -1) {
+                return "Leichter Abwärtstrend (" + difference.toFixed(1) + " PTS)";
+            } else {
+                return "Stabile Leistung";
+            }
+        }
+
+
+        /** Zeigt die Detailansicht und lädt die Spielhistorie */
+        window.showPlayerDetail = function(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return showModal("Fehler", "Spieler nicht gefunden.");
+
+            document.getElementById('detailPlayerName').textContent = player.name;
+            document.getElementById('detailPlayerNum').textContent = `(#${player.number || '-'})`;
+            document.getElementById('playerIdDisplay').textContent = playerId;
+
+            // Filtern und Sortieren der Daten für den aktuellen Spieler (sortiert nach Datum)
+            const currentPlayerStats = allGameStats
+                .filter(stat => stat.playerId === playerId)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            calculateAndRenderAnalysis(player.name, currentPlayerStats);
+            showScreen('playerDetailScreen');
+        }
+
+        /** Berechnet Durchschnitte und rendert die Analyse-Ansicht */
+        function calculateAndRenderAnalysis(playerName, currentPlayerStats) {
+            const totalGames = currentPlayerStats.length;
+            const historyContainer = document.getElementById('gameHistory');
+            historyContainer.innerHTML = '';
+            document.getElementById('historyCount').textContent = totalGames;
+            document.getElementById('noHistory').style.display = totalGames > 0 ? 'none' : 'block';
+
+            // 1. Behandlung, wenn keine Daten vorhanden sind
+            if (totalGames === 0) {
+                document.getElementById('careerAverages').innerHTML = '<p style="color: var(--gray-500); font-style: italic; grid-column: span 4;">Keine Spieldaten vorhanden.</p>';
+                
+                // Setze die Trend-Analyse zurück
+                const trendDiv = document.getElementById('progressionSummary');
+                trendDiv.innerHTML = `<h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Leistungsverlauf (Trend)</h3>
+                <div style="background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--gray-200);">
+                    <p style="font-size: 1.125rem; font-weight: 600; color: var(--gray-500);">Keine Spieldaten zur Trendberechnung vorhanden.</p>
+                </div>`;
+                return;
+            }
+
+            // 2. Gesamtsummen berechnen
+            const totals = { FGM: 0, FGA: 0, 3PM: 0, 3PA: 0, FTM: 0, FTA: 0, REB: 0, AST: 0, STL: 0, BLK: 0, TO: 0, PF: 0, PTS: 0 };
+            currentPlayerStats.forEach(game => {
+                Object.keys(totals).forEach(key => {
+                    totals[key] += (game.stats[key] || 0);
+                });
+            });
+
+            // 3. Durchschnittswerte berechnen und rendern
+            const avgDiv = document.getElementById('careerAverages');
+            avgDiv.innerHTML = ''; 
+
+            const averages = [
+                { label: 'Punkte (PTS)', value: formatAvg(totals.PTS / totalGames) },
+                { label: 'Rebounds (REB)', value: formatAvg(totals.REB / totalGames) },
+                { label: 'Assists (AST)', value: formatAvg(totals.AST / totalGames) },
+                { label: 'Steals (STL)', value: formatAvg(totals.STL / totalGames) },
+                { label: 'Blocks (BLK)', value: formatAvg(totals.BLK / totalGames) },
+                { label: 'Turnovers (TO)', value: formatAvg(totals.TO / totalGames) },
+                { label: 'FG%', value: totals.FGA > 0 ? (totals.FGM / totals.FGA * 100).toFixed(1) + '%' : '0.0%' },
+                { label: '3P%', value: totals['3PA'] > 0 ? (totals['3PM'] / totals['3PA'] * 100).toFixed(1) + '%' : '0.0%' },
+            ];
+
+            averages.forEach(avg => {
+                const item = document.createElement('div');
+                item.className = 'avg-item';
+                item.innerHTML = `
+                    <p class="avg-value">${avg.value}</p>
+                    <p class="avg-label">${avg.label} / Spiel</p>
+                `;
+                avgDiv.appendChild(item);
+            });
+
+
+            // 4. Trend-Analyse (ersetzt das Diagramm)
+            const trendSummary = calculateTrend(currentPlayerStats);
+            const trendDiv = document.getElementById('progressionSummary');
+
+            let trendColor = 'var(--gray-700)'; // Stabil
+            if (trendSummary.includes('Aufwärtstrend')) {
+                trendColor = 'var(--primary)'; // Orange/Koralle für positiv
+            } else if (trendSummary.includes('Abwärtstrend')) {
+                trendColor = 'red'; // Rot für negativ
+            }
+
+
+            trendDiv.innerHTML = `
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Leistungsverlauf (Trend)</h3>
+                <div style="background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--gray-200);">
+                    <p style="font-size: 1.125rem; font-weight: 600; color: ${trendColor};">${trendSummary}</p>
+                    <p style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.5rem;">Vergleich: Durchschnitt der letzten 3 Spiele vs. erste 3 Spiele.</p>
+                </div>
+            `;
+            
+            
+            // 5. Spielhistorie rendern (manuelle Einträge)
+            [...currentPlayerStats].reverse().forEach(game => { // Kopieren und umkehren
+                const historyCard = document.createElement('div');
+                historyCard.style.cssText = 'padding: 1rem; background-color: white; border: 1px solid var(--gray-200); border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);';
+                historyCard.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--gray-200); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                        <h4 style="font-weight: 700; font-size: 1.125rem; color: var(--gray-800);">Spiel vom ${game.date}</h4>
+                        <span style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${game.stats.PTS || 0} PTS</span>
+                    </div>
+                    <div class="stats-grid" style="font-size: 0.875rem; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                        <p><strong>FG:</strong> ${game.stats.FGM}/${game.stats.FGA}</p>
+                        <p><strong>3P:</strong> ${game.stats['3PM']}/${game.stats['3PA']}</p>
+                        <p><strong>FT:</strong> ${game.stats.FTM}/${game.stats.FTA}</p>
+                        <p><strong>REB:</strong> ${game.stats.REB}</p>
+                        <p><strong>AST:</strong> ${game.stats.AST}</p>
+                        <p><strong>STL:</strong> ${game.stats.STL}</p>
+                        <p><strong>BLK:</strong> ${game.stats.BLK}</p>
+                        <p><strong>TO:</strong> ${game.stats.TO}</p>
+                    </div>
+                    <!-- Löschfunktion für manuelle Korrekturen -->
+                    <div style="margin-top: 0.75rem; text-align: right;">
+                        <button onclick="deleteGameStat('${game.id}', '${game.playerName}', '${game.date}')" style="color: #ef4444; transition: color 0.15s; font-size: 0.75rem;">
+                            Eintrag löschen
+                        </button>
+                    </div>
+                `;
+                historyContainer.appendChild(historyCard);
+            });
+        }
+
+        /** Löscht eine spezifische Spielstatistik aus dem localStorage (für manuelle Korrekturen) */
+        window.deleteGameStat = function(docId, playerName, date) {
+            // Findet den Index des zu löschenden Eintrags
+            const initialLength = allGameStats.length;
+            
+            // Behält alle Einträge, deren ID NICHT der docId entspricht
+            allGameStats = allGameStats.filter(stat => stat.id !== docId);
+
+            if (allGameStats.length < initialLength) {
+                saveGameStatsToLocal(); // Speichert die gefilterte Liste
+                showModal("Erfolg", `Statistik vom ${date} für ${playerName} wurde erfolgreich gelöscht.`);
+                
+                // Aktualisiere die Detailansicht, falls der Benutzer sich dort befindet
+                const currentPlayerId = document.getElementById('playerIdDisplay').textContent;
+
+                if (document.getElementById('playerDetailScreen').classList.contains('hidden') === false && currentPlayerId) {
+                    window.showPlayerDetail(currentPlayerId);
+                } else {
+                    // Falls wir auf dem Hauptbildschirm sind, einfach die Liste neu rendern (nicht nötig, aber sicher)
+                    renderPlayerList();
+                }
+            } else {
+                showModal("Fehler", "Löschen fehlgeschlagen: Eintrag nicht gefunden.");
+            }
+        }
+
+
+        // --- START DER ANWENDUNG ---
+
+        window.onload = function() {
+            setupApp();
+        };
+
+    </script>
+</body>
+</html>
