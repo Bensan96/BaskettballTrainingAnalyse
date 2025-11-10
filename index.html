@@ -3,711 +3,705 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basketball Statistik Tracker</title>
-    <!-- ALLE EXTERNE CDNs (Tailwind, Firebase, Chart.js) WURDEN ENTFERNT. -->
-    
+    <title>Basketball Kaderanalyse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for better aesthetics, replacing Tailwind */
-        :root {
-            --primary: #FF7F50; /* Coral for basketball energy */
-            --secondary: #3B82F6; /* Blue for contrast */
-            --gray-900: #1f2937;
-            --gray-800: #374151;
-            --gray-700: #4b5563;
-            --gray-600: #6b7280;
-            --gray-500: #9ca3af;
-            --gray-400: #9ca3af;
-            --gray-300: #d1d5db;
-            --gray-200: #e5e7eb;
-            --gray-100: #f3f4f6;
-            --gray-50: #f9fafb;
+        /* Angepasste Schriftart */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc; /* Hellgrau */
         }
-        
-        /* Global Styles */
-        body { font-family: 'Inter', sans-serif; background-color: var(--gray-50); min-height: 100vh; padding: 1rem; }
-
-        .text-primary { color: var(--primary); }
-        .bg-primary { background-color: var(--primary); }
-        .hover-primary:hover { background-color: #e6693a; }
-        .text-secondary { color: var(--secondary); }
-
-        /* App Container */
-        .app-container {
-            width: 100%;
-            max-width: 896px; /* max-w-4xl */
-            margin: 0 auto; /* mx-auto */
-            background-color: white; /* bg-white */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
-            border-radius: 0.75rem; /* rounded-xl */
-            padding: 1.5rem; 
+        /* Scrollbar-Stil für das Statistik-Feld */
+        .stat-list::-webkit-scrollbar {
+            width: 6px;
         }
-        @media (min-width: 640px) {
-            .app-container {
-                padding: 2rem; /* sm:p-8 */
-            }
+        .stat-list::-webkit-scrollbar-thumb {
+            background-color: #90cdf4; /* Helles Blau */
+            border-radius: 3px;
         }
-
-        /* Typography and Headings */
-        .heading-main { font-size: 1.875rem; font-weight: 800; color: var(--gray-900); margin-bottom: 1.5rem; border-bottom: 4px solid var(--primary); padding-bottom: 0.5rem; }
-        .heading-sub { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: var(--gray-800); }
-        .text-sm-gray { font-size: 0.875rem; color: var(--gray-600); margin-bottom: 1.5rem; }
-        .text-base-gray { font-size: 1rem; color: var(--gray-700); }
-
-
-        /* Spinner */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .stat-list::-webkit-scrollbar-track {
+            background-color: #edf2f7;
         }
-        .loading-spinner {
-            display: flex; justify-content: center; align-items: center; height: 12rem;
+        .modal-bg {
+            background-color: rgba(0, 0, 0, 0.6);
         }
-        .spinner-circle {
-            height: 3rem; width: 3rem; border-radius: 50%; border-bottom: 2px solid var(--primary); animation: spin 1s linear infinite;
-        }
-
-        /* Screen Transitions */
-        .screen {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            margin-top: 1.5rem; /* Equivalent to space-y-6 container separation */
-        }
-
-        /* Input/Button styles */
-        .input-field-group { display: flex; flex-direction: column; gap: 0.5rem; }
-        @media (min-width: 640px) { .input-field-group { flex-direction: row; } }
-
-        .input-text {
-            flex-grow: 1; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 0.5rem; outline: none;
-        }
-        .input-number-small {
-            width: 6rem; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 0.5rem; outline: none; text-align: center;
-        }
-        .input-text:focus, .input-number-small:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary);
-        }
-
-        .btn-primary {
-            background-color: var(--primary); color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; transition: background-color 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); white-space: nowrap;
-        }
-        .btn-secondary {
-            background-color: var(--secondary); color: white; padding: 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .btn-back { display: flex; align-items: center; color: var(--primary); margin-bottom: 1rem; text-decoration: none; transition: text-decoration 0.15s; }
-        .btn-back:hover { text-decoration: underline; }
-
-        /* Player Card / Game Entry Styles */
-        .player-card {
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 1rem; background-color: white; border: 1px solid var(--gray-200); border-radius: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: box-shadow 0.15s;
-        }
-        @media (min-width: 640px) { .player-card { flex-direction: row; } }
-        
-        .player-info-group { display: flex; align-items: center; margin-bottom: 0.75rem; }
-        @media (min-width: 640px) { .player-info-group { margin-bottom: 0; } }
-        
-        .player-actions-group { display: flex; gap: 0.5rem; }
-
-        .player-card-num { font-size: 1.5rem; font-weight: 800; color: var(--primary); width: 3rem; text-align: center; }
-        .player-card-name { font-size: 1.125rem; font-weight: 500; color: var(--gray-800); margin-left: 1rem; }
-        
-        /* NEUE KLASSEN FÜR AKTIONEN (ersetzen Inline-Styles) */
-        .btn-stat-new {
-            font-size: 0.875rem; background-color: #dbeafe; color: var(--secondary); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;
-        }
-        .btn-stat-new:hover { background-color: #bfdbfe; }
-
-        .btn-analysis {
-            font-size: 0.875rem; background-color: var(--gray-100); color: var(--gray-700); padding: 0.5rem 0.75rem; border-radius: 0.5rem; transition: background-color 0.2s;
-        }
-        .btn-analysis:hover { background-color: var(--gray-200); }
-
-
-        /* Detail/Analysis Styles */
-        .analysis-box { background-color: var(--gray-100); padding: 1rem; border-radius: 0.5rem; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); margin-bottom: 1.5rem; }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-        @media (min-width: 640px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        .avg-item {
-            padding: 0.75rem; background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border: 1px solid var(--gray-200);
-        }
-        .avg-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
-        .avg-label { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem; }
-
-        /* Stat Entry Form */
-        .stat-entry-row { display: flex; flex-direction: column; justify-content: space-between; padding: 0.75rem; background-color: var(--gray-50); border-radius: 0.5rem; border: 1px solid var(--gray-200); }
-        @media (min-width: 640px) { .stat-entry-row { flex-direction: row; align-items: center; } }
-
-        .stat-input-group { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-        @media (min-width: 640px) { .stat-input-group { margin-top: 0; } }
-        
-        .date-input { padding: 0.25rem; border: 1px solid var(--gray-300); border-radius: 0.25rem; }
     </style>
-</head>
-<body class="bg-gray-50">
-
-    <!-- Haupt-Container für die App -->
-    <div id="app" class="app-container">
-        <h1 class="heading-main">Basketball-Trainingsanalyse (Lokal)</h1>
-        <p class="text-sm" style="color: red; margin-bottom: 1.5rem;" id="user-info">Daten werden lokal im Browser gespeichert.</p>
-
-        <!-- Ladeanzeige (wird nur kurz angezeigt) -->
-        <div id="loading-spinner" class="loading-spinner">
-            <div class="spinner-circle"></div>
-        </div>
-
-        <!-- Bildschirme -->
-        <div id="screens" class="hidden" style="margin-top: 1.5rem;">
-
-            <!-- 1. Spielerlisten-Bildschirm -->
-            <div id="playerListScreen" class="screen">
-                <h2 class="heading-sub">Spielerverwaltung</h2>
-
-                <!-- Spieler hinzufügen -->
-                <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px dashed var(--gray-300); border-radius: 0.5rem; background-color: var(--gray-50);">
-                    <h3 style="font-weight: 500; margin-bottom: 0.5rem; color: var(--gray-700);">Neuen Spieler hinzufügen</h3>
-                    <div class="input-field-group">
-                        <input type="text" id="newPlayerName" placeholder="Name des Spielers" class="input-text">
-                        <input type="number" id="newPlayerNumber" placeholder="Trikotnummer" class="input-number-small" style="width: 6rem; padding-left: 0.75rem; padding-right: 0.75rem;">
-                        <button onclick="addPlayer()" class="btn-primary bg-primary hover-primary">Hinzufügen</button>
-                    </div>
-                </div>
-
-                <!-- Liste der Spieler -->
-                <h3 style="font-size: 1.25rem; font-weight: 500; margin-bottom: 0.75rem; color: var(--gray-800);">Teamkader (<span id="playerCount">0</span> Spieler)</h3>
-                <div id="playerList" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <!-- Spieler-Karten werden hier dynamisch eingefügt -->
-                </div>
-            </div>
-
-            <!-- 2. Statistik-Eingabebildschirm -->
-            <div id="statEntryScreen" class="screen hidden">
-                <button onclick="showScreen('playerListScreen')" class="btn-back">
-                    <svg style="width: 1.25rem; height: 1.25rem; margin-right: 0.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Zurück zur Spielerliste
-                </button>
-                <h2 class="heading-sub">Statistikeingabe für: <span id="entryPlayerName" class="text-primary"></span></h2>
-                <p class="text-sm-gray" style="margin-bottom: 1.5rem; color: var(--gray-500);">Spiel-Datum: <input type="date" id="gameDate" class="date-input"></p>
-
-                <!-- Statistische Felder (Feldwürfe, 3er, Freiwürfe, etc.) -->
-                <div id="statsForm" style="display: flex; flex-direction: column; gap: 1rem;">
-                    <!-- Formularfelder werden hier dynamisch mit data-stat-id eingefügt -->
-                </div>
-                
-                <div style="margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; background-color: #fffbeb; border: 1px solid #fef3c7;">
-                    <p style="color: #b45309; font-weight: 600;">Voice-Memo (Wunsch-Feature)</p>
-                    <p style="font-size: 0.875rem; color: #a16207;">Hier könnte zukünftig ein Button zur Spracheingabe sein (z.B. "Max hat 2 Dreier gemacht, 1 Rebound"). Derzeit manuelle Eingabe erforderlich.</p>
-                </div>
-
-                <button onclick="saveGameStats()" id="saveStatsBtn" class="btn-secondary" style="width: 100%; margin-top: 1.5rem;">
-                    Statistiken speichern
-                </button>
-            </div>
-
-            <!-- 3. Spieler-Detail-Bildschirm (Analyse) -->
-            <div id="playerDetailScreen" class="screen hidden">
-                <button onclick="showScreen('playerListScreen')" class="btn-back">
-                    <svg style="width: 1.25rem; height: 1.25rem; margin-right: 0.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Zurück zur Übersicht
-                </button>
-                <h2 style="font-size: 1.875rem; font-weight: 800; margin-bottom: 1rem; color: var(--gray-900);"><span id="detailPlayerName"></span> <span id="detailPlayerNum" style="color: var(--gray-400);"></span></h2>
-                <p class="text-sm-gray" style="color: var(--gray-500); margin-bottom: 1.5rem;">Lokale ID: <span id="playerIdDisplay"></span></p>
-
-                <!-- Karriere-Übersicht -->
-                <div class="analysis-box">
-                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Karriere-Durchschnitt (Pro Spiel)</h3>
-                    <div id="careerAverages" class="stats-grid">
-                        <!-- Durchschnittswerte werden hier eingefügt -->
-                    </div>
-                </div>
-
-                <!-- Verlaufs-Zusammenfassung (ERSETZT DAS DIAGRAMM) -->
-                <div id="progressionSummary" style="margin-bottom: 2rem;">
-                    <!-- Trend-Analyse wird hier eingefügt -->
-                </div>
-
-                <!-- Detailierte Spielhistorie -->
-                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Detailierte Spielhistorie (<span id="historyCount">0</span> Spiele)</h3>
-                <div id="gameHistory" style="display: flex; flex-direction: column; gap: 1rem;">
-                    <!-- Spielstatistiken werden hier eingefügt -->
-                    <p id="noHistory" style="color: var(--gray-500); font-style: italic; padding: 1rem; background-color: var(--gray-100); border-radius: 0.5rem; display: none;">Noch keine Spieleinträge vorhanden.</p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Modale Nachricht für Erfolge/Fehler (ersetzt alert()) -->
-    <div id="messageModal" style="position: fixed; inset: 0; background-color: rgba(31, 41, 55, 0.75); display: none; z-index: 50; align-items: center; justify-content: center; padding: 1rem;">
-        <div style="background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 1.5rem; width: 100%; max-width: 24rem; transform: scale(1); transition: all 0.3s;">
-            <h3 id="modalTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-900);">Nachricht</h3>
-            <p id="modalMessage" style="color: var(--gray-700); margin-bottom: 1rem;"></p>
-            <button onclick="closeModal()" class="btn-primary" style="width: 100%;">Schließen</button>
-        </div>
-    </div>
-
-
-    <script>
-        // --- Globale Speicherstruktur ---
-        let players = [];
-        let allGameStats = [];
-        let currentGameStats = {}; 
-
-        const PLAYER_STORAGE_KEY = 'bb_tracker_players';
-        const STATS_STORAGE_KEY = 'bb_tracker_stats';
-
-
-        // --- HILFSFUNKTIONEN (UTILITIES) ---
-
-        /** Zeigt ein modales Fenster an (ersetzt alert()) */
-        function showModal(title, message) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMessage').textContent = message;
-            document.getElementById('messageModal').style.display = 'flex';
-        }
-
-        /** Schließt das modale Fenster */
-        window.closeModal = function() {
-            document.getElementById('messageModal').style.display = 'none';
-        }
-
-        /** Navigiert zwischen den Bildschirmen */
-        window.showScreen = function(screenName) {
-            const screens = ['playerListScreen', 'statEntryScreen', 'playerDetailScreen'];
-            screens.forEach(id => {
-                const screen = document.getElementById(id);
-                if (screen) {
-                    if (id === screenName) {
-                        screen.classList.remove('hidden');
-                        screen.style.opacity = '1';
-                        screen.style.transform = 'translateY(0)';
-                    } else {
-                        // Verstecke andere Bildschirme
-                        screen.style.opacity = '0';
-                        screen.style.transform = 'translateY(10px)';
-                        setTimeout(() => screen.classList.add('hidden'), 300);
-                    }
-                }
-            });
-        }
-
-        /** Formatiert eine Zahl als String mit zwei Dezimalstellen */
-        function formatAvg(num) {
-            return (num || 0).toFixed(2);
-        }
-
-        // --- LOCAL STORAGE FUNKTIONEN ---
-        
-        /** Lädt alle Daten beim Start aus dem localStorage */
-        function loadAllData() {
-            try {
-                const playerString = localStorage.getItem(PLAYER_STORAGE_KEY);
-                players = playerString ? JSON.parse(playerString) : [];
-
-                const statsString = localStorage.getItem(STATS_STORAGE_KEY);
-                allGameStats = statsString ? JSON.parse(statsString) : [];
-
-            } catch (error) {
-                console.error("Fehler beim Laden des lokalen Speichers:", error);
-                players = [];
-                allGameStats = [];
-            }
-            renderPlayerList();
-        }
-
-        /** Speichert die Spielerliste im localStorage */
-        function savePlayers() {
-            try {
-                localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(players));
-            } catch (error) {
-                console.error("Fehler beim Speichern der Spieler:", error);
-                showModal("Speicherfehler", "Spieler konnten nicht gespeichert werden. Speicher ist möglicherweise voll.");
-            }
-        }
-
-        /** Speichert die gesamte Statistikliste im localStorage */
-        function saveGameStatsToLocal() {
-            try {
-                localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(allGameStats));
-            } catch (error) {
-                console.error("Fehler beim Speichern der Statistiken:", error);
-                showModal("Speicherfehler", "Statistiken konnten nicht gespeichert werden. Speicher ist möglicherweise voll.");
-            }
-        }
-
-        // --- ANWENDUNGS-SETUP ---
-
-        function setupApp() {
-            // Zeigt die Bildschirme an und versteckt den Spinner
-            document.getElementById('screens').classList.remove('hidden');
-            document.getElementById('loading-spinner').style.display = 'none';
-            
-            loadAllData();
-            showScreen('playerListScreen');
-        }
-
-        // --- SPIELERVERWALTUNG ---
-
-        /** Fügt einen neuen Spieler hinzu */
-        window.addPlayer = function() {
-            const nameInput = document.getElementById('newPlayerName');
-            const numberInput = document.getElementById('newPlayerNumber');
-
-            const name = nameInput.value.trim();
-            const number = parseInt(numberInput.value) || 0;
-
-            if (name.length < 2) {
-                return showModal("Eingabefehler", "Bitte einen gültigen Namen eingeben.");
-            }
-
-            const newPlayer = {
-                id: Date.now().toString(), // Generiert eine einfache, eindeutige ID
-                name: name,
-                number: number
-            };
-
-            players.push(newPlayer);
-            savePlayers();
-
-            nameInput.value = '';
-            numberInput.value = '';
-            showModal("Erfolg", `Spieler ${name} hinzugefügt.`);
-            renderPlayerList(); // Aktualisiert die Liste
-        }
-
-        /** Rendert die Spielerliste in der UI */
-        window.renderPlayerList = function() {
-            const listContainer = document.getElementById('playerList');
-            document.getElementById('playerCount').textContent = players.length;
-            listContainer.innerHTML = '';
-
-            if (players.length === 0) {
-                listContainer.innerHTML = '<p style="color: var(--gray-500); font-style: italic; padding: 1rem; background-color: var(--gray-100); border-radius: 0.5rem;">Noch keine Spieler hinzugefügt. Starten Sie oben mit der Eingabe!</p>';
-                return;
-            }
-
-            players.sort((a, b) => a.number - b.number).forEach(player => {
-                const playerCard = document.createElement('div');
-                playerCard.className = 'player-card'; // Verwende interne CSS-Klasse
-                playerCard.innerHTML = `
-                    <div class="player-info-group">
-                        <span class="player-card-num">${player.number || '-'}</span>
-                        <span class="player-card-name">${player.name}</span>
-                    </div>
-                    <div class="player-actions-group">
-                        <button onclick="startGameEntry('${player.id}', '${player.name}')" class="btn-stat-new">
-                            + Neue Statistik
-                        </button>
-                        <button onclick="showPlayerDetail('${player.id}')" class="btn-analysis">
-                            Analyse/Verlauf
-                        </button>
-                    </div>
-                `;
-                listContainer.appendChild(playerCard);
-            });
-        }
-
-        // --- STATISTIK EINGABE ---
-
-        /** Bereitet den Statistik-Eingabebildschirm vor */
-        window.startGameEntry = function(playerId, playerName) {
-            currentGameStats = { playerId, playerName };
-            document.getElementById('entryPlayerName').textContent = playerName;
-            
-            // Setze das heutige Datum als Standard
-            const today = new Date().toISOString().substring(0, 10);
-            document.getElementById('gameDate').value = today;
-
-            renderStatsForm();
-            showScreen('statEntryScreen');
-        }
-
-        /** Rendert das Formular für die Statistik-Eingabe */
-        function renderStatsForm() {
-            const stats = [
-                { label: 'Feldwürfe (Getroffen/Versucht)', id: 'FGM', idA: 'FGA' },
-                { label: 'Dreier (Getroffen/Versucht)', id: '3PM', idA: '3PA' },
-                { label: 'Freiwürfe (Getroffen/Versucht)', id: 'FTM', idA: 'FTA' },
-                { label: 'Rebounds (REB)', id: 'REB' },
-                { label: 'Assists (AST)', id: 'AST' },
-                { label: 'Steals (STL)', id: 'STL' },
-                { label: 'Blocks (BLK)', id: 'BLK' },
-                { label: 'Turnovers (TO)', id: 'TO' },
-                { label: 'Fouls (PF)', id: 'PF' },
-            ];
-
-            const formContainer = document.getElementById('statsForm');
-            formContainer.innerHTML = '';
-
-            stats.forEach(stat => {
-                const div = document.createElement('div');
-                div.className = 'stat-entry-row';
-                
-                let inputHtml = '';
-                if (stat.idA) {
-                    inputHtml = `
-                        <div class="stat-input-group">
-                            <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem;">
-                            <span style="color: var(--gray-500); align-self: center;">/</span>
-                            <input type="number" data-stat-id="${stat.idA}" value="0" min="0" class="input-number-small" style="width: 5rem;">
-                        </div>
-                    `;
-                } else {
-                    inputHtml = `
-                        <input type="number" data-stat-id="${stat.id}" value="0" min="0" class="input-number-small" style="width: 5rem; margin-top: 0.5rem; ">
-                    `;
-                    // Unnötige mobile Anpassung in JS entfernt, da CSS das regelt
-                }
-
-                div.innerHTML = `
-                    <label style="font-weight: 500; color: var(--gray-700);">${stat.label}</label>
-                    ${inputHtml}
-                `;
-                formContainer.appendChild(div);
-            });
-        }
-
-        /** Speichert die eingegebenen Spielstatistiken im localStorage */
-        window.saveGameStats = function() {
-            const gameDate = document.getElementById('gameDate').value;
-            if (!gameDate) {
-                return showModal("Eingabefehler", "Bitte wählen Sie ein Spiel-Datum aus.");
-            }
-
-            const stats = {};
-            
-            document.querySelectorAll('#statsForm input[data-stat-id]').forEach(input => {
-                const id = input.getAttribute('data-stat-id');
-                const value = parseInt(input.value) || 0;
-                stats[id] = value;
-            });
-            
-            // Punkteberechnung
-            const twoPointersMade = stats.FGM - stats['3PM'];
-            const points = twoPointersMade * 2 + stats['3PM'] * 3 + stats.FTM * 1;
-            stats.PTS = points;
-
-            if (stats.FGM > stats.FGA || stats['3PM'] > stats['3PA'] || stats.FTM > stats.FTA) {
-                return showModal("Eingabefehler", "Die Anzahl der 'Getroffen' kann nicht größer sein als die Anzahl der 'Versucht'.");
-            }
-            if (stats['3PM'] > stats.FGM) {
-                return showModal("Eingabefehler", "Die Anzahl der 'Dreier Getroffen' kann nicht größer sein als die 'Feldwürfe Getroffen'.");
-            }
-
-            const newGameStat = {
-                id: Date.now().toString(),
-                playerId: currentGameStats.playerId,
-                playerName: currentGameStats.playerName,
-                date: gameDate,
-                stats: stats
-            };
-            
-            allGameStats.push(newGameStat);
-            saveGameStatsToLocal();
-
-            showModal("Erfolg", `Statistiken für ${currentGameStats.playerName} (${points} Punkte) erfolgreich gespeichert.`);
-            showScreen('playerListScreen'); // Zurück zur Spielerliste
-        }
-
-
-        // --- SPIELER ANALYSE & VERLAUF ---
-
-        /** Berechnet den Trend der Punkte pro Spiel */
-        function calculateTrend(data) {
-            if (data.length < 2) return "Kein Trend (weniger als 2 Spiele)";
-
-            // Vergleicht den Durchschnitt der letzten 3 Spiele mit dem Durchschnitt der ersten 3 Spiele
-            const N = data.length;
-            const windowSize = Math.min(N, 3);
-
-            if (windowSize < 2) return "Kurzfristig kein Trend (weniger als 2 Spiele)";
-
-            // Extrahieren der Punkte-Arrays
-            const recentPoints = data.slice(N - windowSize).map(g => g.stats.PTS);
-            const initialPoints = data.slice(0, windowSize).map(g => g.stats.PTS);
-            
-            // Hilfsfunktion für den Durchschnitt
-            const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-            
-            const recentAvg = avg(recentPoints);
-            const initialAvg = avg(initialPoints);
-
-            const difference = recentAvg - initialAvg;
-
-            if (difference > 1) {
-                return "Deutlicher Aufwärtstrend (+" + difference.toFixed(1) + " PTS)";
-            } else if (difference < -1) {
-                return "Leichter Abwärtstrend (" + difference.toFixed(1) + " PTS)";
-            } else {
-                return "Stabile Leistung";
-            }
-        }
-
-
-        /** Zeigt die Detailansicht und lädt die Spielhistorie */
-        window.showPlayerDetail = function(playerId) {
-            const player = players.find(p => p.id === playerId);
-            if (!player) return showModal("Fehler", "Spieler nicht gefunden.");
-
-            document.getElementById('detailPlayerName').textContent = player.name;
-            document.getElementById('detailPlayerNum').textContent = `(#${player.number || '-'})`;
-            document.getElementById('playerIdDisplay').textContent = playerId;
-
-            // Filtern und Sortieren der Daten für den aktuellen Spieler (sortiert nach Datum)
-            const currentPlayerStats = allGameStats
-                .filter(stat => stat.playerId === playerId)
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            calculateAndRenderAnalysis(player.name, currentPlayerStats);
-            showScreen('playerDetailScreen');
-        }
-
-        /** Berechnet Durchschnitte und rendert die Analyse-Ansicht */
-        function calculateAndRenderAnalysis(playerName, currentPlayerStats) {
-            const totalGames = currentPlayerStats.length;
-            const historyContainer = document.getElementById('gameHistory');
-            historyContainer.innerHTML = '';
-            document.getElementById('historyCount').textContent = totalGames;
-            document.getElementById('noHistory').style.display = totalGames > 0 ? 'none' : 'block';
-
-            // 1. Behandlung, wenn keine Daten vorhanden sind
-            if (totalGames === 0) {
-                document.getElementById('careerAverages').innerHTML = '<p style="color: var(--gray-500); font-style: italic; grid-column: span 4;">Keine Spieldaten vorhanden.</p>';
-                
-                // Setze die Trend-Analyse zurück
-                const trendDiv = document.getElementById('progressionSummary');
-                trendDiv.innerHTML = `<h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Leistungsverlauf (Trend)</h3>
-                <div style="background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--gray-200);">
-                    <p style="font-size: 1.125rem; font-weight: 600; color: var(--gray-500);">Keine Spieldaten zur Trendberechnung vorhanden.</p>
-                </div>`;
-                return;
-            }
-
-            // 2. Gesamtsummen berechnen
-            const totals = { FGM: 0, FGA: 0, 3PM: 0, 3PA: 0, FTM: 0, FTA: 0, REB: 0, AST: 0, STL: 0, BLK: 0, TO: 0, PF: 0, PTS: 0 };
-            currentPlayerStats.forEach(game => {
-                Object.keys(totals).forEach(key => {
-                    totals[key] += (game.stats[key] || 0);
-                });
-            });
-
-            // 3. Durchschnittswerte berechnen und rendern
-            const avgDiv = document.getElementById('careerAverages');
-            avgDiv.innerHTML = ''; 
-
-            const averages = [
-                { label: 'Punkte (PTS)', value: formatAvg(totals.PTS / totalGames) },
-                { label: 'Rebounds (REB)', value: formatAvg(totals.REB / totalGames) },
-                { label: 'Assists (AST)', value: formatAvg(totals.AST / totalGames) },
-                { label: 'Steals (STL)', value: formatAvg(totals.STL / totalGames) },
-                { label: 'Blocks (BLK)', value: formatAvg(totals.BLK / totalGames) },
-                { label: 'Turnovers (TO)', value: formatAvg(totals.TO / totalGames) },
-                { label: 'FG%', value: totals.FGA > 0 ? (totals.FGM / totals.FGA * 100).toFixed(1) + '%' : '0.0%' },
-                { label: '3P%', value: totals['3PA'] > 0 ? (totals['3PM'] / totals['3PA'] * 100).toFixed(1) + '%' : '0.0%' },
-            ];
-
-            averages.forEach(avg => {
-                const item = document.createElement('div');
-                item.className = 'avg-item';
-                item.innerHTML = `
-                    <p class="avg-value">${avg.value}</p>
-                    <p class="avg-label">${avg.label} / Spiel</p>
-                `;
-                avgDiv.appendChild(item);
-            });
-
-
-            // 4. Trend-Analyse (ersetzt das Diagramm)
-            const trendSummary = calculateTrend(currentPlayerStats);
-            const trendDiv = document.getElementById('progressionSummary');
-
-            let trendColor = 'var(--gray-700)'; // Stabil
-            if (trendSummary.includes('Aufwärtstrend')) {
-                trendColor = 'var(--primary)'; // Orange/Koralle für positiv
-            } else if (trendSummary.includes('Abwärtstrend')) {
-                trendColor = 'red'; // Rot für negativ
-            }
-
-
-            trendDiv.innerHTML = `
-                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--gray-800);">Leistungsverlauf (Trend)</h3>
-                <div style="background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--gray-200);">
-                    <p style="font-size: 1.125rem; font-weight: 600; color: ${trendColor};">${trendSummary}</p>
-                    <p style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.5rem;">Vergleich: Durchschnitt der letzten 3 Spiele vs. erste 3 Spiele.</p>
-                </div>
-            `;
-            
-            
-            // 5. Spielhistorie rendern (manuelle Einträge)
-            [...currentPlayerStats].reverse().forEach(game => { // Kopieren und umkehren
-                const historyCard = document.createElement('div');
-                historyCard.style.cssText = 'padding: 1rem; background-color: white; border: 1px solid var(--gray-200); border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);';
-                historyCard.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--gray-200); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
-                        <h4 style="font-weight: 700; font-size: 1.125rem; color: var(--gray-800);">Spiel vom ${game.date}</h4>
-                        <span style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${game.stats.PTS || 0} PTS</span>
-                    </div>
-                    <div class="stats-grid" style="font-size: 0.875rem; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
-                        <p><strong>FG:</strong> ${game.stats.FGM}/${game.stats.FGA}</p>
-                        <p><strong>3P:</strong> ${game.stats['3PM']}/${game.stats['3PA']}</p>
-                        <p><strong>FT:</strong> ${game.stats.FTM}/${game.stats.FTA}</p>
-                        <p><strong>REB:</strong> ${game.stats.REB}</p>
-                        <p><strong>AST:</strong> ${game.stats.AST}</p>
-                        <p><strong>STL:</strong> ${game.stats.STL}</p>
-                        <p><strong>BLK:</strong> ${game.stats.BLK}</p>
-                        <p><strong>TO:</strong> ${game.stats.TO}</p>
-                    </div>
-                    <!-- Löschfunktion für manuelle Korrekturen -->
-                    <div style="margin-top: 0.75rem; text-align: right;">
-                        <button onclick="deleteGameStat('${game.id}', '${game.playerName}', '${game.date}')" style="color: #ef4444; transition: color 0.15s; font-size: 0.75rem;">
-                            Eintrag löschen
-                        </button>
-                    </div>
-                `;
-                historyContainer.appendChild(historyCard);
-            });
-        }
-
-        /** Löscht eine spezifische Spielstatistik aus dem localStorage (für manuelle Korrekturen) */
-        window.deleteGameStat = function(docId, playerName, date) {
-            // Findet den Index des zu löschenden Eintrags
-            const initialLength = allGameStats.length;
-            
-            // Behält alle Einträge, deren ID NICHT der docId entspricht
-            allGameStats = allGameStats.filter(stat => stat.id !== docId);
-
-            if (allGameStats.length < initialLength) {
-                saveGameStatsToLocal(); // Speichert die gefilterte Liste
-                showModal("Erfolg", `Statistik vom ${date} für ${playerName} wurde erfolgreich gelöscht.`);
-                
-                // Aktualisiere die Detailansicht, falls der Benutzer sich dort befindet
-                const currentPlayerId = document.getElementById('playerIdDisplay').textContent;
-
-                if (document.getElementById('playerDetailScreen').classList.contains('hidden') === false && currentPlayerId) {
-                    window.showPlayerDetail(currentPlayerId);
-                } else {
-                    // Falls wir auf dem Hauptbildschirm sind, einfach die Liste neu rendern (nicht nötig, aber sicher)
-                    renderPlayerList();
-                }
-            } else {
-                showModal("Fehler", "Löschen fehlgeschlagen: Eintrag nicht gefunden.");
-            }
-        }
-
-
-        // --- START DER ANWENDUNG ---
-
-        window.onload = function() {
-            setupApp();
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        const playerListElement = document.getElementById('player-list');
+        const modalElement = document.getElementById('player-modal');
+        const modalTitleElement = document.getElementById('modal-title');
+        const playerForm = document.getElementById('player-form');
+        const statListElement = document.getElementById('stat-list');
+        const statSearchInput = document.getElementById('stat-search');
+        const reportContentElement = document.getElementById('report-content');
+        const modalTabContainer = document.getElementById('modal-tab-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const statMessage = document.getElementById('stat-message');
+
+        const state = {
+            players: [],
+            currentPlayer: null,
+            currentTab: 'entry', // 'entry' or 'report'
         };
 
+        const initialStats = {
+            'PTS': 'Punkte',
+            'REB': 'Rebounds',
+            'AST': 'Assists',
+            'STL': 'Steals',
+            'BLK': 'Blocks',
+            'TOV': 'Turnovers',
+            'FGM': 'Feldwürfe getroffen',
+            'FGA': 'Feldwürfe versucht',
+            '3PM': 'Dreier getroffen',
+            '3PA': 'Dreier versucht',
+            'FTM': 'Freiwürfe getroffen',
+            'FTA': 'Freiwürfe versucht',
+            'GP': 'Gespielte Spiele',
+            'MIN': 'Spielminuten',
+        };
+        
+        // --- Utility Functions ---
+
+        // Helper to convert base64 to ArrayBuffer (for audio) - Not needed here, but good practice to include helpers
+        function base64ToArrayBuffer(base64) {
+            try {
+                const binaryString = atob(base64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes.buffer;
+            } catch (error) {
+                console.error("Error decoding base64:", error);
+                return new ArrayBuffer(0);
+            }
+        }
+
+        // Helper for error/info messages in the Stat Tab
+        function showStatMessage(message, type = 'info') {
+            statMessage.textContent = message;
+            statMessage.className = 'text-sm mt-4 p-2 rounded-lg ' + (type === 'error' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800');
+            setTimeout(() => {
+                statMessage.textContent = '';
+                statMessage.className = '';
+            }, 3000);
+        }
+
+        // --- Analysis Logic ---
+
+        function calculateAdvancedStats(player) {
+            const s = player.stats || {};
+            const PTS = s.PTS || 0;
+            const REB = s.REB || 0;
+            const AST = s.AST || 0;
+            const STL = s.STL || 0;
+            const BLK = s.BLK || 0;
+            const TOV = s.TOV || 0;
+            const FGM = s.FGM || 0;
+            const FGA = s.FGA || 0;
+            const FTM = s.FTM || 0;
+            const FTA = s.FTA || 0;
+            const GP = s.GP || 0;
+
+            const format = (n) => (isFinite(n) ? n.toFixed(2) : 'N/A');
+
+            // True Shooting Percentage (TS%)
+            const TS_ATT = 2 * (FGA + 0.44 * FTA);
+            const TS_PCT = (TS_ATT > 0) ? PTS / TS_ATT : 0;
+
+            // Effective Field Goal Percentage (eFG%)
+            const eFG_PCT = (FGA > 0) ? (FGM + 0.5 * (s['3PM'] || 0)) / FGA : 0;
+
+            // Player Efficiency Rating (PER - simplified version for visualization)
+            const PER_NUM = PTS + REB + AST + STL + BLK - TOV - (FGA - FGM) - (FTA - FTM);
+            const PER = (GP > 0) ? PER_NUM / GP : 0;
+
+
+            let reportHtml = `
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold border-b pb-2 text-blue-700">Wichtige Durchschnittswerte (pro Spiel)</h3>
+                    <div class="grid grid-cols-2 gap-4 text-gray-700">
+                        <div class="p-3 bg-blue-50 rounded-lg shadow-sm">
+                            <p class="text-sm font-medium">Punkte (PTS)</p>
+                            <p class="text-2xl font-bold">${format(PTS / GP)}</p>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-lg shadow-sm">
+                            <p class="text-sm font-medium">Rebounds (REB)</p>
+                            <p class="text-2xl font-bold">${format(REB / GP)}</p>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-lg shadow-sm">
+                            <p class="text-sm font-medium">Assists (AST)</p>
+                            <p class="text-2xl font-bold">${format(AST / GP)}</p>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-lg shadow-sm">
+                            <p class="text-sm font-medium">Turnovers (TOV)</p>
+                            <p class="text-2xl font-bold">${format(TOV / GP)}</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold border-b pt-4 pb-2 text-blue-700">Effizienz-Metriken</h3>
+                    <div class="grid grid-cols-2 gap-4 text-gray-700">
+                        <div class="p-3 bg-green-50 rounded-lg shadow-sm">
+                            <p class="text-sm font-medium">Wahre Wurfquote (TS%)</p>
+                            <p class="text-2xl font-bold">${format(TS_PCT * 100)}%</p>
+                            <p class="text-xs text-gray-500">Misst die Effizienz aller Würfe (Feld & Freiwürfe).</p>
+                        </div>
+                        <div class="p-3 bg-green-50 rounded-lg shadow-sm">
+                            <p class="text-sm font-medium">Effektive Feldwurfquote (eFG%)</p>
+                            <p class="text-2xl font-bold">${format(eFG_PCT * 100)}%</p>
+                            <p class="text-xs text-gray-500">Berücksichtigt den Wert von Dreiern.</p>
+                        </div>
+                        <div class="p-3 bg-yellow-50 rounded-lg shadow-sm col-span-2">
+                            <p class="text-sm font-medium">Vereinfachte Effizienz (PER)</p>
+                            <p class="text-2xl font-bold">${format(PER)}</p>
+                            <p class="text-xs text-gray-500">Ein Maß für die Gesamtleistung pro Spiel.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold border-b pt-4 pb-2 text-blue-700">Wurfquoten</h3>
+                    <div class="space-y-2">
+                        <p class="text-lg font-medium">Feldwürfe (FG): <span class="text-blue-600">${FGM} / ${FGA} (${format((FGM / FGA) * 100)}%)</span></p>
+                        <p class="text-lg font-medium">Dreier (3P): <span class="text-blue-600">${s['3PM'] || 0} / ${s['3PA'] || 0} (${format(((s['3PM'] || 0) / (s['3PA'] || 0)) * 100)}%)</span></p>
+                        <p class="text-lg font-medium">Freiwürfe (FT): <span class="text-blue-600">${FTM} / ${FTA} (${format((FTM / FTA) * 100)}%)</span></p>
+                    </div>
+                </div>
+            `;
+
+            return reportHtml;
+        }
+
+
+        // --- Firestore & State Management ---
+
+        function getPlayerCollectionRef() {
+            if (!db || !userId) return null;
+            const playerCollectionPath = `artifacts/${appId}/users/${userId}/players`;
+            return collection(db, playerCollectionPath);
+        }
+
+        async function initFirebase() {
+            try {
+                if (!firebaseConfig) {
+                    console.error("Firebase Config nicht gefunden.");
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                loadingIndicator.textContent = "Authentifizierung läuft...";
+                
+                // Sign in logic
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Wait for auth state to be ready
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        loadingIndicator.textContent = `Authentifizierung abgeschlossen. User ID: ${userId}`;
+                        setTimeout(() => { loadingIndicator.classList.add('hidden'); }, 1000);
+                        setupPlayerListener();
+                    } else {
+                        userId = null;
+                        isAuthReady = true; // Still ready, just unauthenticated (though we force sign-in)
+                        loadingIndicator.textContent = "Bitte melden Sie sich an.";
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialisierung fehlgeschlagen:", error);
+                loadingIndicator.textContent = "Fehler bei der Firebase-Initialisierung. Prüfen Sie die Konsole.";
+            }
+        }
+
+        function setupPlayerListener() {
+            if (!isAuthReady || !userId) return;
+
+            const playersRef = getPlayerCollectionRef();
+            if (!playersRef) return;
+
+            // Real-time listener
+            onSnapshot(playersRef, (snapshot) => {
+                const newPlayers = [];
+                snapshot.forEach(doc => {
+                    newPlayers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Sort by jersey number (Trikotnummer)
+                state.players = newPlayers.sort((a, b) => (a.number || 999) - (b.number || 999));
+                renderPlayerList();
+            }, (error) => {
+                console.error("Fehler beim Abrufen der Spielerdaten:", error);
+            });
+        }
+        
+        async function savePlayer(playerData) {
+            if (!isAuthReady || !userId) {
+                console.error("Nicht authentifiziert. Speichern nicht möglich.");
+                return;
+            }
+            const playersRef = getPlayerCollectionRef();
+            
+            try {
+                if (playerData.id && state.players.some(p => p.id === playerData.id)) {
+                    // Update existing player
+                    const playerDocRef = doc(playersRef, playerData.id);
+                    await updateDoc(playerDocRef, {
+                        name: playerData.name,
+                        number: parseInt(playerData.number) || null,
+                        position: playerData.position,
+                        stats: playerData.stats
+                    });
+                    showStatMessage('Spieler erfolgreich aktualisiert.', 'info');
+                } else {
+                    // Add new player
+                    // Ensure the number is unique before adding, but Firestore query is complex.
+                    // Simple check:
+                    if (state.players.some(p => p.number == playerData.number)) {
+                         showStatMessage(`Trikotnummer ${playerData.number} bereits vergeben.`, 'error');
+                         return;
+                    }
+                    await addDoc(playersRef, {
+                        name: playerData.name,
+                        number: parseInt(playerData.number) || null,
+                        position: playerData.position,
+                        stats: playerData.stats,
+                        createdAt: new Date().toISOString()
+                    });
+                    showStatMessage('Neuer Spieler erfolgreich hinzugefügt.', 'info');
+                }
+                closeModal();
+            } catch (e) {
+                console.error("Fehler beim Speichern des Spielers: ", e);
+                showStatMessage('Fehler beim Speichern. Prüfen Sie die Konsole.', 'error');
+            }
+        }
+
+        async function deletePlayer(playerId) {
+            if (!isAuthReady || !userId) return;
+            
+            // Custom Confirmation Modal - replacing window.confirm
+            const confirmDelete = await showCustomModal(
+                'Spieler Löschen',
+                'Sind Sie sicher, dass Sie diesen Spieler unwiderruflich löschen möchten?',
+                'Löschen',
+                'Abbrechen'
+            );
+
+            if (confirmDelete) {
+                try {
+                    const playersRef = getPlayerCollectionRef();
+                    await deleteDoc(doc(playersRef, playerId));
+                    closeModal();
+                } catch (e) {
+                    console.error("Fehler beim Löschen des Spielers: ", e);
+                    showStatMessage('Fehler beim Löschen. Prüfen Sie die Konsole.', 'error');
+                }
+            }
+        }
+
+
+        // --- UI Rendering ---
+
+        function renderPlayerList() {
+            playerListElement.innerHTML = '';
+
+            if (state.players.length === 0) {
+                playerListElement.innerHTML = `
+                    <div class="text-center p-10">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2m0 2H7m10 0h3m-3 0h3m-3 0h3m-3 0h3m-3 0h3m-3 0h3m-3 0h3m-3 0h3M7 4v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2M4 12H2v-2a3 3 0 015.356-1.857M4 12v-2m0 2H2v-2m0 2H2v-2m0 2H2v-2m0 2H2v-2m0 2H2v-2m0 2H2v-2m0 2H2v-2m0 2H2v-2M10 4h5v-2a3 3 0 00-5.356-1.857M10 4v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2M14 4h5v-2a3 3 0 00-5.356-1.857M14 4v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2M17 4h5v-2a3 3 0 00-5.356-1.857M17 4v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2m0 0v2" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Keine Spieler im Kader</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Beginnen Sie mit dem Hinzufügen des ersten Spielers.
+                        </p>
+                        <div class="mt-6">
+                            <button onclick="openModalForNewPlayer()" type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                Neuer Spieler hinzufügen
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            state.players.forEach(player => {
+                const playerCard = document.createElement('div');
+                const GP = player.stats?.GP || 0;
+                const PTS = player.stats?.PTS || 0;
+                const REB = player.stats?.REB || 0;
+                const AST = player.stats?.AST || 0;
+                
+                playerCard.className = 'player-card bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition duration-300 cursor-pointer flex items-center space-x-4 border-l-4 border-blue-500';
+                playerCard.onclick = () => openModalForPlayer(player.id);
+                
+                playerCard.innerHTML = `
+                    <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-extrabold text-xl shadow-inner">
+                        ${player.number || '?'}
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-gray-800">${player.name || 'Unbenannter Spieler'}</h3>
+                        <p class="text-sm text-gray-500">${player.position || 'Position Unbekannt'}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-gray-800">${(GP > 0 ? (PTS / GP).toFixed(1) : 0)} PTS</p>
+                        <p class="text-xs text-gray-500">${(GP > 0 ? (REB / GP).toFixed(1) : 0)} REB | ${(GP > 0 ? (AST / GP).toFixed(1) : 0)} AST</p>
+                    </div>
+                `;
+                playerListElement.appendChild(playerCard);
+            });
+        }
+
+        function renderStatEntry(player) {
+            statListElement.innerHTML = '';
+            const searchValue = statSearchInput.value.toLowerCase();
+            const stats = player.stats || {};
+
+            Object.entries(initialStats)
+                .filter(([key, label]) => 
+                    label.toLowerCase().includes(searchValue) || key.toLowerCase().includes(searchValue)
+                )
+                .forEach(([key, label]) => {
+                    const value = stats[key] || 0;
+
+                    const statItem = document.createElement('div');
+                    statItem.className = 'flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition duration-100 border-b last:border-b-0';
+                    statItem.innerHTML = `
+                        <label for="stat-${key}" class="block text-sm font-medium text-gray-700 w-3/5">${label} (${key})</label>
+                        <div class="w-2/5 flex items-center space-x-2">
+                            <input 
+                                type="number" 
+                                id="stat-${key}" 
+                                data-stat-key="${key}"
+                                value="${value}" 
+                                min="0"
+                                class="w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md p-2 text-right text-sm"
+                                placeholder="0"
+                            >
+                        </div>
+                    `;
+                    statListElement.appendChild(statItem);
+                });
+            
+            // Reattach event listener for input changes
+            statListElement.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('input', handleStatChange);
+            });
+        }
+        
+        function renderReport(player) {
+            if ((player.stats?.GP || 0) === 0) {
+                reportContentElement.innerHTML = `
+                    <div class="text-center p-10 bg-red-50 rounded-xl">
+                        <svg class="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="mt-2 text-lg font-medium text-red-800">Keine Spieldaten vorhanden</h3>
+                        <p class="mt-1 text-sm text-red-600">
+                            Bitte tragen Sie zuerst Statistiken und mindestens ein Gespieltes Spiel (GP) ein, um den Analysebericht zu generieren.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            reportContentElement.innerHTML = calculateAdvancedStats(player);
+        }
+
+        function renderModalTabs(player) {
+            const tabs = [
+                { id: 'entry', label: 'Statistikeingabe' },
+                { id: 'report', label: 'Analyse-Bericht' }
+            ];
+
+            modalTabContainer.innerHTML = tabs.map(tab => `
+                <button 
+                    onclick="switchModalTab('${tab.id}')"
+                    class="py-3 px-4 text-sm font-medium rounded-t-lg transition duration-150 ease-in-out ${state.currentTab === tab.id 
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white' 
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}"
+                >
+                    ${tab.label}
+                </button>
+            `).join('');
+
+            // Show/Hide tab content
+            document.getElementById('entry-tab-content').classList.toggle('hidden', state.currentTab !== 'entry');
+            document.getElementById('report-tab-content').classList.toggle('hidden', state.currentTab !== 'report');
+            
+            // Update the content when switching
+            if (state.currentTab === 'entry') {
+                renderStatEntry(player);
+            } else if (state.currentTab === 'report') {
+                renderReport(player);
+            }
+        }
+
+
+        // --- Event Handlers & Main Logic ---
+
+        window.openModalForNewPlayer = function() {
+            state.currentPlayer = { name: '', number: '', position: '', stats: {} };
+            modalTitleElement.textContent = 'Neuen Spieler hinzufügen';
+            playerForm.querySelector('#player-id').value = '';
+            playerForm.querySelector('#player-name').value = '';
+            playerForm.querySelector('#player-number').value = '';
+            playerForm.querySelector('#player-position').value = '';
+            document.getElementById('delete-button').classList.add('hidden');
+            
+            state.currentTab = 'entry';
+            renderModalTabs(state.currentPlayer);
+            modalElement.classList.remove('hidden');
+        }
+
+        window.openModalForPlayer = function(id) {
+            const player = state.players.find(p => p.id === id);
+            if (!player) return;
+
+            state.currentPlayer = JSON.parse(JSON.stringify(player)); // Deep copy for editing
+            modalTitleElement.textContent = `Spieler ${player.number || '?'} - ${player.name || 'Unbekannt'}`;
+            playerForm.querySelector('#player-id').value = player.id;
+            playerForm.querySelector('#player-name').value = player.name || '';
+            playerForm.querySelector('#player-number').value = player.number || '';
+            playerForm.querySelector('#player-position').value = player.position || '';
+            
+            document.getElementById('delete-button').classList.remove('hidden');
+
+            state.currentTab = 'entry';
+            renderModalTabs(state.currentPlayer);
+            modalElement.classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            modalElement.classList.add('hidden');
+            state.currentPlayer = null;
+            statSearchInput.value = ''; // Clear search when closing
+            statMessage.textContent = '';
+        }
+
+        window.switchModalTab = function(tabId) {
+            state.currentTab = tabId;
+            if (state.currentPlayer) {
+                renderModalTabs(state.currentPlayer);
+            }
+        }
+
+        function handleStatChange(event) {
+            if (!state.currentPlayer) return;
+            const key = event.target.dataset.statKey;
+            let value = parseInt(event.target.value) || 0;
+            if (value < 0) value = 0; // Stats cannot be negative
+            
+            state.currentPlayer.stats = { ...state.currentPlayer.stats, [key]: value };
+        }
+
+        playerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Update player metadata from form fields
+            state.currentPlayer.name = playerForm.querySelector('#player-name').value.trim();
+            state.currentPlayer.number = parseInt(playerForm.querySelector('#player-number').value) || null;
+            state.currentPlayer.position = playerForm.querySelector('#player-position').value.trim();
+
+            if (!state.currentPlayer.name || !state.currentPlayer.number) {
+                showStatMessage('Bitte geben Sie einen Namen und eine Trikotnummer ein.', 'error');
+                return;
+            }
+
+            savePlayer(state.currentPlayer);
+        });
+        
+        document.getElementById('delete-button').addEventListener('click', () => {
+            if (state.currentPlayer && state.currentPlayer.id) {
+                deletePlayer(state.currentPlayer.id);
+            }
+        });
+
+        statSearchInput.addEventListener('input', () => {
+            if (state.currentPlayer && state.currentTab === 'entry') {
+                renderStatEntry(state.currentPlayer);
+            }
+        });
+        
+        // Custom Confirmation Modal Implementation
+        // This replaces the forbidden window.confirm()
+        const customModal = document.createElement('div');
+        customModal.className = 'fixed inset-0 z-50 hidden items-center justify-center modal-bg';
+        document.body.appendChild(customModal);
+
+        function showCustomModal(title, message, confirmText, cancelText) {
+            return new Promise((resolve) => {
+                customModal.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-all">
+                        <h3 class="text-lg font-bold text-gray-900 border-b pb-2">${title}</h3>
+                        <p class="mt-4 text-sm text-gray-700">${message}</p>
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button id="cancel-btn" type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                                ${cancelText}
+                            </button>
+                            <button id="confirm-btn" type="button" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition shadow-md">
+                                ${confirmText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                customModal.classList.remove('hidden');
+                customModal.classList.add('flex');
+
+                document.getElementById('confirm-btn').onclick = () => {
+                    customModal.classList.add('hidden');
+                    customModal.classList.remove('flex');
+                    resolve(true);
+                };
+
+                document.getElementById('cancel-btn').onclick = () => {
+                    customModal.classList.add('hidden');
+                    customModal.classList.remove('flex');
+                    resolve(false);
+                };
+            });
+        }
+        
+        // Initialize everything
+        window.onload = initFirebase;
+
     </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6 bg-white p-6 rounded-xl shadow-md">
+            <h1 class="text-3xl font-extrabold text-blue-700">🏀 Kaderanalyse</h1>
+            <button onclick="openModalForNewPlayer()" id="add-player-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform transition hover:scale-105">
+                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Spieler hinzufügen
+            </button>
+        </header>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="text-center p-4 text-sm text-gray-500 mb-4 bg-yellow-100 rounded-lg">
+            Initialisiere Anwendung...
+        </div>
+
+        <!-- Player List -->
+        <div id="player-list" class="space-y-4">
+            <!-- Player cards will be rendered here -->
+        </div>
+
+    </div>
+
+    <!-- Player Modal (Popup) -->
+    <div id="player-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center modal-bg overflow-y-auto" role="dialog" aria-modal="true" onclick="if(event.target.id === 'player-modal') closeModal()">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl transform transition-all my-8 mx-4">
+            
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-800">Spieler Details</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Tab Container -->
+            <div class="border-b mb-4">
+                <div id="modal-tab-container" class="flex space-x-4 -mb-px">
+                    <!-- Tabs rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Statistikeingabe -->
+            <div id="entry-tab-content">
+                <form id="player-form" class="space-y-4">
+                    <input type="hidden" id="player-id">
+                    
+                    <!-- Player Info Fields -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label for="player-name" class="block text-sm font-medium text-gray-700">Spielername</label>
+                            <input type="text" id="player-name" required class="mt-1 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md p-2">
+                        </div>
+                        <div>
+                            <label for="player-number" class="block text-sm font-medium text-gray-700">Trikotnummer</label>
+                            <input type="number" id="player-number" min="0" required class="mt-1 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md p-2">
+                        </div>
+                        <div>
+                            <label for="player-position" class="block text-sm font-medium text-gray-700">Position</label>
+                            <input type="text" id="player-position" class="mt-1 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-md p-2" placeholder="z.B. Guard, Center">
+                        </div>
+                    </div>
+
+                    <!-- Stat Entry Header and Search -->
+                    <div class="pt-4 border-t">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Statistiken akkumulieren</h3>
+                        <input 
+                            type="text" 
+                            id="stat-search" 
+                            placeholder="Statistik suchen (z.B. Dreier, Assists, FTM)" 
+                            class="mb-3 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-full p-3 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- Stat List Container -->
+                    <div id="stat-list" class="stat-list h-72 overflow-y-auto pr-2 bg-gray-50 p-3 rounded-lg border">
+                        <!-- Stat items rendered by JS (renderStatEntry) -->
+                    </div>
+
+                    <p id="stat-message" class="text-center font-medium"></p>
+                    
+                    <!-- Form Actions -->
+                    <div class="flex justify-between pt-4 border-t">
+                        <button id="delete-button" type="button" class="px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-md transition transform hover:scale-105">
+                            Spieler löschen
+                        </button>
+                        <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-lg transition transform hover:scale-105">
+                            Speichern & Schließen
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab Content: Analyse-Bericht -->
+            <div id="report-tab-content" class="hidden">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Analyse-Bericht</h3>
+                <div id="report-content" class="min-h-72 bg-gray-50 p-4 rounded-lg border">
+                    <!-- Report content rendered by JS (renderReport) -->
+                    <p class="text-gray-500 text-center py-10">Generiere Bericht...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </body>
 </html>
